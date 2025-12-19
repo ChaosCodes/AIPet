@@ -1,12 +1,12 @@
 
 import React, { useEffect, useRef } from 'react';
-import { GameEvent } from '../types';
+import { TurnResult } from '../types';
 
 interface EventLogProps {
-  events: GameEvent[];
+  history: TurnResult[];
 }
 
-const EventLog: React.FC<EventLogProps> = ({ events }) => {
+const EventLog: React.FC<EventLogProps> = ({ history }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -16,52 +16,45 @@ const EventLog: React.FC<EventLogProps> = ({ events }) => {
         behavior: 'smooth'
       });
     }
-  }, [events]);
-
-  const getStatName = (s: string) => {
-    switch(s) {
-      case 'INT': return '智力';
-      case 'STR': return '力量';
-      case 'CHR': return '魅力';
-      case 'GOLD': return '金钱';
-      case 'STRS': return '压力';
-      default: return s;
-    }
-  }
+  }, [history]);
 
   return (
-    <div className="mt-6 kawaii-card rounded-3xl p-6 h-64 overflow-y-auto custom-scrollbar flex flex-col gap-4" ref={scrollRef}>
-      {events.length === 0 ? (
-        <div className="text-slate-300 font-bold italic h-full flex flex-col items-center justify-center gap-3">
-          <i className="fas fa-comment-dots fa-3x opacity-20"></i>
-          <p>准备好开始新的一月了吗？</p>
+    <div className="h-full overflow-y-auto custom-scrollbar flex flex-col gap-5 pr-3" ref={scrollRef}>
+      {history.length === 0 ? (
+        <div className="flex flex-col items-center justify-center h-48 text-slate-200">
+          <i className="fas fa-dna text-4xl mb-4 opacity-30 animate-spin-slow"></i>
+          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-center opacity-50">数据链路空白<br/>等待首次推演</p>
         </div>
       ) : (
-        events.map((ev, idx) => (
-          <div key={idx} className="animate-fadeIn flex flex-col gap-2">
-            <div className="flex items-center gap-2">
-              <span className={`text-[9px] font-black px-3 py-0.5 rounded-full uppercase tracking-tighter text-white
-                ${ev.location === 'Market' || ev.location === '商店' ? 'bg-yellow-400' : 'bg-blue-400'}
-              `}>
-                {ev.location}
-              </span>
+        history.map((h, idx) => (
+          <div key={idx} className="group animate-fadeIn bg-white border-2 border-slate-50 p-5 rounded-[2rem] hover:border-blue-100 transition-all shadow-sm relative overflow-hidden">
+            <div className="flex items-center justify-between mb-4">
+               <div className="flex items-center gap-2">
+                 <span className="w-5 h-5 rounded-lg bg-slate-900 text-white flex items-center justify-center text-[9px] font-black">
+                   {idx + 1}
+                 </span>
+                 <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Evolution Log</span>
+               </div>
+               {h.newModifier && <i className={`fas ${h.newModifier.icon} text-blue-500 text-xs`}></i>}
             </div>
-            
-            <div className="bg-white rounded-2xl p-4 shadow-sm border-2 border-slate-50 relative">
-              <div className="absolute -top-2 left-6 w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-bottom-[8px] border-white"></div>
-              
-              <p className="text-sm text-slate-600 leading-relaxed font-medium">{ev.text}</p>
-              
-              <div className="mt-3 pt-3 border-t border-slate-100 flex flex-wrap gap-2">
-                {Object.entries(ev.changes).map(([stat, val]) => (
-                  <div key={stat} className={`text-[10px] font-black px-2 py-0.5 rounded-md flex items-center gap-1
-                    ${(val as number) > 0 ? 'bg-emerald-50 text-emerald-500' : 'bg-pink-50 text-pink-500'}
-                  `}>
-                    <span className="uppercase">{getStatName(stat)}</span>
-                    <span>{(val as number) > 0 ? '↑' : '↓'} {Math.abs(val as number)}</span>
-                  </div>
-                ))}
-              </div>
+            <p className="text-[11px] font-bold text-slate-600 leading-relaxed mb-4 italic">
+              "{h.text.length > 80 ? h.text.substring(0, 80) + '...' : h.text}"
+            </p>
+            <div className="flex flex-wrap gap-1.5 border-t border-slate-50 pt-4">
+               {/* Fix: Filter out 'modifiers' which is an array and cannot be directly rendered in a span. 
+                   Cast v to number to satisfy ReactNode requirements for rendering. */}
+               {Object.entries(h.changes || {})
+                 .filter(([k, v]) => k !== 'modifiers' && (v as any) !== 0)
+                 .map(([s, v]) => (
+                 <span key={s} className={`text-[8px] font-black px-2.5 py-1 rounded-lg border
+                    ${(v as number) > 0 ? 'bg-emerald-50 text-emerald-600 border-emerald-50' : 'bg-pink-50 text-pink-600 border-pink-50'}
+                 `}>
+                    {s} {(v as number) > 0 ? '+' : ''}{v as number}
+                 </span>
+               ))}
+            </div>
+            <div className="absolute right-0 bottom-0 p-4 opacity-0 group-hover:opacity-[0.03] transition-opacity">
+               <i className="fas fa-fingerprint text-6xl"></i>
             </div>
           </div>
         ))
